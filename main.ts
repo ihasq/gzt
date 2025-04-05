@@ -1,8 +1,8 @@
-export function add(a: number, b: number): number {
-  return a + b;
-}
+import { TarWriter } from "npm:@gera2ld/tarjs";
+import { walk } from "jsr:@std/fs"
 
-// Learn more at https://docs.deno.com/runtime/manual/examples/module_metadata#concepts
-if (import.meta.main) {
-  console.log("Add 2 + 3 =", add(2, 3));
-}
+const writer = new TarWriter();
+
+await Promise.all((await Array.fromAsync(walk(".", { includeDirs: false }))).map(({ path }) => new Response(new Response(Deno.readFileSync(path)).body?.pipeThrough(new CompressionStream("gzip"))).arrayBuffer().then(ab => writer.addFile(path, ab))))
+
+Deno.writeFileSync("out.gzt", new Uint8Array(await (await writer.write()).arrayBuffer()))
